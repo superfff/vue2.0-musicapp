@@ -3,7 +3,9 @@
 		<div class="slider-group" ref="sliderGroup">
 			<slot></slot>
 		</div>
-		<div class="dots"></div>
+		<div class="dots">
+			<span class="dot" :class="{'active' : currentPageIndex == index}" v-for="(item, index) in dots"></span>
+		</div>
 	</div>
 </template>
 
@@ -18,7 +20,8 @@ export default {
 	},
 	data(){
 		return {
-
+			dots: [],
+			currentPageIndex: 0
 		}
 	},
 	created(){
@@ -27,7 +30,12 @@ export default {
 	mounted(){
 		setTimeout(() => {
 			this._setSliderWidth();
+			this._initDots();
 			this._initSlider();
+
+			if(this.autoPlay){
+				this._play();
+			}
 		}, 20)
 	},
 	props: {
@@ -44,12 +52,14 @@ export default {
 		//间隔
 		interval: {
 			type: Number,
-			default: 4000
+			default: 2500
 		}
 	},
 	methods: {
 		_setSliderWidth() {
 			this.children = this.$refs.sliderGroup.children;
+
+			// console.log(this.children.length);
 			let width = 0;
 			let sliderWidth = this.$refs.slider.clientWidth;
 			for(let i=0; i<this.children.length; i++){
@@ -66,11 +76,15 @@ export default {
 
 			this.$refs.sliderGroup.style.width = `${width}px`;
 		},
+		_initDots() {
+			this.dots = new Array(this.children.length);
+		},
 		_initSlider() {
 			this.slider = new BScroll(this.$refs.slider, {
 				scrollX: true,
 				scrollY: false,
 				momentum: false,
+				// autoPlay: true,	
 				// snap: true,
 				// snapLoop: this.loop,
 				// snapThreshold: 0.3,
@@ -82,7 +96,25 @@ export default {
 				},
 				click: true
 			})
+
+			this.slider.on('scrollEnd', () => {
+				this.currentPageIndex = this.slider.getCurrentPage().pageX;
+				// console.log(this.currentPageIndex);
+
+				if(this.autoPlay){
+					clearTimeout(this.timer);
+					this._play();
+				}
+			})
+		},
+		_play() {
+			this.timer = setTimeout(() => {
+				this.slider.next(400);
+			}, this.interval)
 		}
+	},
+	destroyed(){
+		console.log('destory');
 	}
 }
 </script>
